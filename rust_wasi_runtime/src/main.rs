@@ -1,12 +1,12 @@
 extern crate clap;
 use clap::{App, Arg};
 
-use core::borrow::Borrow;
+// use core::borrow::Borrow;
 use std::collections::HashMap;
 use std::fs::read;
 use wasmtime::*;
 use wasmtime_jit::*;
-use wasmtime_wasi::old::snapshot_0::create_wasi_instance as create_wasi_instance_snapshot_0;
+// use wasmtime_wasi::old::snapshot_0::create_wasi_instance as create_wasi_instance_snapshot_0;
 
 fn main() {
     let matches = App::new("Rust WASI Runtime")
@@ -30,19 +30,22 @@ fn main() {
         )
         .get_matches();
 
-    let mut features = Features::default();
-    features.threads = true;
-    let mut config = Config::new();
-    let config = config.features(features);
-    let engine = HostRef::new(Engine::new(&config));
-    let store = HostRef::new(Store::new(&engine));
+    // let mut features = Features::default();
+    // features.threads = true;
+    let mut config = Config::new().wasm_threads(true);
+    // let config = config.features(features);
+    // let engine = HostRef::new(Engine::new(&config));
+    let engine = Engine::new(&config);
+    // let store = HostRef::new(Store::new(&engine));
+    let store = Store::new(&engine);
 
     let wasm_path = matches.value_of("file").unwrap();
     let wasm = read(wasm_path).expect("wasm file");
 
     println!("Loading module at {}", wasm_path);
 
-    let module = HostRef::new(Module::new(&store, &wasm).expect("wasm module"));
+    // let module = HostRef::new(Module::new(&store, &wasm).expect("wasm module"));
+    let module = Module::new(&store, &wasm).expect("wasm module");
 
     println!("Creating WASI module instance");
     let preopened_dirs = vec![];
@@ -55,19 +58,21 @@ fn main() {
 
     println!("Resolving imports of {}", wasm_path);
     let mut imports = vec![];
-    for i in module.borrow().imports() {
+    // for i in module.borrow().imports() {
+    for i in module.imports() {
         let module_name = i.module();
         let field_name = i.name();
         println!("Module: {:?}, Field: {:?}", module_name, field_name);
-        if let Some(instance) = module_registry.get(module_name.as_str()) {
-            if let Some(export) = instance.borrow().find_export_by_name(field_name.as_str()) {
+        if let Some(instance) = module_registry.get(module_name) {
+            if let Some(export) = instance.borrow().find_export_by_name(field_name) {
                 imports.push(export.clone());
             }
         }
     }
 
     println!("Creating instance for {} module", wasm_path);
-    let instance = Instance::new(&store, &module, &imports).expect("wasm instance");
+    // let instance = Instance::new(&store, &module, &imports).expect("wasm instance");
+    let instance = Instance::new(&module, &imports).expect("wasm instance");
 
     let function_name = matches.value_of("function").unwrap();
 
