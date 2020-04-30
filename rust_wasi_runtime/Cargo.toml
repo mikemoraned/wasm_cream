@@ -9,5 +9,5 @@ edition = "2018"
 [dependencies]
 wasmtime = "0.8"
 wasmtime-jit = "0.8"
-wasmtime-wasi = "0.8"
+wasmtime-wasi = "0.16"
 clap = "2.33"
